@@ -7,6 +7,7 @@
 #include <SoftwareSerial.h>
 #include <Preferences.h>
 #include <Seeed_Arduino_SSCMA.h>
+#include <ArduinoJson.h>
 #include "time.h"
 #include "FS.h"
 #include "SD.h"
@@ -103,6 +104,48 @@ void loadUserData(int index);
 bool setupWiFi(const char *newSSID, const char *newPassword);
 String getUptime();
 
+// Function to list all files and directories in the /recordings directory on the SD card in JSON format
+String listRecordings() {
+  DynamicJsonDocument doc(1024);
+  JsonArray filesArray = doc.to<JsonArray>();
+
+  Serial.println("Listing files stored in /recordings directory on SD card");
+
+  File root = SD.open("/recordings");
+  if (!root) {
+    Serial.println("Failed to open /recordings directory");
+    return "{\"error\": \"Failed to open /recordings directory\"}";
+  }
+
+  listDirContentsJson(root, "/recordings", filesArray);  // Call the recursive function
+  root.close();
+
+  String jsonString;
+  serializeJson(doc, jsonString);
+  Serial.println(jsonString);
+  return jsonString;
+}
+
+// Recursive function to list directory contents in JSON format
+void listDirContentsJson(File dir, String path, JsonArray &filesArray) {
+  File file = dir.openNextFile();
+  while (file) {
+    if (file.isDirectory()) {
+      JsonObject dirObject = filesArray.createNestedObject();
+      dirObject["type"] = "directory";
+      dirObject["name"] = String(file.name());
+      JsonArray subFilesArray = dirObject.createNestedArray("contents");
+      listDirContentsJson(file, path + "/" + String(file.name()), subFilesArray);  // Recursively list the contents of the directory
+    } else {
+      JsonObject fileObject = filesArray.createNestedObject();
+      fileObject["type"] = "file";
+      fileObject["name"] = String(file.name());
+      fileObject["size"] = file.size();
+    }
+    file = dir.openNextFile();
+  }
+}
+
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
@@ -185,9 +228,36 @@ void setup() {
     }
   });
 
-  server.on("/recordings", HTTP_GET, [](AsyncWebServerRequest *request) {
-
+  // Endpoint to list recordings
+  server.on("/list-recordings", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String files = listRecordings();
+    request->send(200, "application/json", files);
   });
+
+  // Endpoint to play a recording
+  server.on("/play-recording", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("file")) {
+        String filename = request->getParam("file")->value();
+        File file = SD.open("/recordings/" + filename);
+        if (file) {
+            AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", 
+                [file](uint8_t *buffer, size_t maxLen, size_t index) mutable -> size_t {
+                    if (file.available()) {
+                        size_t bytesRead = file.read(buffer, maxLen);
+                        return bytesRead;
+                    } else {
+                        file.close();
+                        return 0; // No more data to send
+                    }
+                });
+            request->send(response);
+        } else {
+            request->send(404, "text/plain", "File not found");
+        }
+    } else {
+        request->send(400, "text/plain", "Bad Request");
+    }
+});
 
   server.on("/download", HTTP_GET, [](AsyncWebServerRequest *request){
     if (request->hasParam("file")) {

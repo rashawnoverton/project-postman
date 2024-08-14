@@ -109,7 +109,7 @@ function showSection(id) {
       window.open('/update', '_blank');
     }
 
-    if (id == 'serial-messages' && isActive){
+    if (id == 'serial-messages' && isActive) {
       window.open('/webserial', '_blank');
     }
   });
@@ -241,6 +241,37 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
+  function playRecording(filename) {
+    console.log(`Playing recording: ${filename}`);
+    fetch(`/play-recording?file=${filename}`)
+      .then(response => response.text())
+      .then(data => {
+        console.log('Data received:', data);
+        const frames = data.split('\n').slice(1); // Discard the first frame (title)
+        const totalFrames = frames.length;
+        const intervalTime = 30000 / totalFrames; // 30 seconds divided by the number of frames
+
+        console.log(`Total frames: ${totalFrames}`);
+        console.log(`Interval time: ${intervalTime} ms`);
+
+        const recordingsImage = document.getElementById('recordings-image');
+        let frameIndex = 0;
+
+        function displayNextFrame() {
+          if (frameIndex < totalFrames) {
+            console.log(`Displaying frame ${frameIndex + 1}/${totalFrames}`);
+            recordingsImage.src = `data:image/jpeg;base64,${frames[frameIndex]}`;
+            frameIndex++;
+            setTimeout(displayNextFrame, intervalTime);
+          } else {
+            console.log('All frames displayed.');
+          }
+        }
+
+        displayNextFrame();
+      })
+      .catch(error => console.error('Error playing recording:', error));
+  }
   // Initial load of logs
   loadLogs();
 
@@ -280,6 +311,40 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(error => console.error('Error fetching device info:', error));
   }
 
+  function listRecordings() {
+    fetch('/list-recordings') // Adjust the URL to your endpoint
+      .then(response => response.json())
+      .then(data => {
+        const recordingsContainer = document.getElementById('recordings-list');
+        recordingsContainer.innerHTML = ''; // Clear any existing content
+
+        data.forEach(recording => {
+          const recordingElement = document.createElement('div');
+          recordingElement.classList.add('recording');
+
+          const nameElement = document.createElement('p');
+          nameElement.textContent = `Name: ${recording.name}`;
+          recordingElement.appendChild(nameElement);
+
+          const sizeElement = document.createElement('p');
+          sizeElement.textContent = `Size: ${recording.size} bytes`;
+          recordingElement.appendChild(sizeElement);
+
+          const playButton = document.createElement('button');
+          playButton.textContent = 'Play';
+          // playButton.onclick = () => playRecording(recording.name);
+          playButton.addEventListener('click', () => playRecording(recording.name));
+          recordingElement.appendChild(playButton);
+
+          recordingsContainer.appendChild(recordingElement);
+        });
+      })
+      .catch(error => console.error('Error fetching recordings list:', error));
+  }
+
+  // Initialize recordings list on page load
+  listRecordings();
+
   // Initial load of device info
   fetchDeviceInfo();
   // Refresh device info every minute (optional)
@@ -311,3 +376,4 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error('Connect button not found.');
   }
 });
+

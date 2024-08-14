@@ -244,6 +244,15 @@
   background-color: #f1f1f1;
 }
 
+.recordings-image {
+  width: 100%;
+  height: auto;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Ensure the content section container uses Flexbox for layout */
 .wifi-device-container {
   display: flex;
