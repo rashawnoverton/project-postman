@@ -13,7 +13,6 @@
 #include "SPI.h"
 #include "esp_mac.h"
 
-
 #define SD_CS_PIN 21              // XIAO ESP32-S3 CS pin
 #define FIRMWAREVERSION "EO 1.0"  // E-ESP32 O-open source 1.0 Version
 #define host "ProjectPostmanESP"
@@ -30,7 +29,7 @@ struct deviceInfo {
   String hostname;
   IPAddress IP;
   bool wificonnected;
-  unsigned long uptime;
+  String uptime;
   long gmtoffset;
   int daylightoffset;
   unsigned long interval;
@@ -65,7 +64,7 @@ deviceInfo esp32Info = {
   "",         // hostname
   "",         // IP
   false,      // wificonnected
-  0,          // uptime
+  "",         // uptime
   -3600 * 5,  // gmtoffset
   0,          // daylightoffset
   30000,      // interval
@@ -101,7 +100,7 @@ void setTimezone();
 String getInterfaceMacAddress(esp_mac_type_t interface);
 void saveUserData(int index);
 void loadUserData(int index);
-bool setupWiFi(const char* newSSID, const char* newPassword);
+bool setupWiFi(const char *newSSID, const char *newPassword);
 String getUptime();
 
 void notFound(AsyncWebServerRequest *request) {
@@ -119,7 +118,7 @@ void setup() {
     Serial.println("An Error has occurred while mounting LittleFS");
     return;
   }
-  if (!AI.begin()){ 
+  if (!AI.begin()) {
     Serial.println("Grove Vision AI not initiated");
   }
 
@@ -138,6 +137,9 @@ void setup() {
   });
   server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(LittleFS, "/script.js", "application/javascript");
+  });
+  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/favicon.ico", "application/javascript");
   });
 
   server.on("/startStream", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -184,25 +186,20 @@ void setup() {
   });
 
   server.on("/recordings", HTTP_GET, [](AsyncWebServerRequest *request) {
-    
+
   });
 
-  server.on("/download", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String path;
+  server.on("/download", HTTP_GET, [](AsyncWebServerRequest *request){
     if (request->hasParam("file")) {
-      path = request->getParam("file")->value();
-      String filename = path.substring(path.lastIndexOf('/') + 1);  // Extract filename from path
-      Serial.println(path);
-      Serial.println(filename);
-      if (SD.exists(path)) {
-        request->send(SD, path, "application/octet-stream");
+      String filePath = request->getParam("file")->value();
+      if (SD.exists(filePath)) {
+        String contentType = getContentType(filePath);
+        request->send(SD, filePath.c_str(), contentType, true);
       } else {
         request->send(404, "text/plain", "File not found");
-        Serial.println("File not found");
       }
     } else {
       request->send(400, "text/plain", "Filename not specified");
-      Serial.println("Filename not specified");
     }
   });
 
@@ -246,10 +243,10 @@ void setup() {
       String temppassword = request->getParam("password")->value();
       Serial.println("Connecting to SSID: " + tempssid);
 
-      if (setupWiFi(tempssid.c_str(), temppassword.c_str())) { // Attempt to connect to the new Wi-Fi network
+      if (setupWiFi(tempssid.c_str(), temppassword.c_str())) {  // Attempt to connect to the new Wi-Fi network
         esp32Info.wificonnected = true;
         request->send(200, "text/plain", "Connected to new network");
-      } else { // Failed to connect, try reconnecting to the previous network or set up an access point
+      } else {  // Failed to connect, try reconnecting to the previous network or set up an access point
         if (!setupWiFi(esp32Info.ssid.c_str(), esp32Info.wifi_password.c_str())) {
           WiFi.softAP(AP_ssid, AP_password);
           esp32Info.wificonnected = false;
@@ -286,7 +283,7 @@ void setup() {
     json += "\"hostname\":\"" + esp32Info.hostname + "\",";
     json += "\"IP\":\"" + esp32Info.IP.toString() + "\",";
     json += "\"wificonnected\":" + String(esp32Info.wificonnected ? "true" : "false") + ",";
-    json += "\"uptime\":" + getUptime() + ",";
+    json += "\"uptime\":\"" + getUptime() + "\",";
     json += "\"gmtoffset\":" + String(esp32Info.gmtoffset) + ",";
     json += "\"daylightoffset\":" + String(esp32Info.daylightoffset) + ",";
     json += "\"interval\":" + String(esp32Info.interval);
@@ -396,7 +393,7 @@ String humanReadableSize(const size_t bytes) {
     return String(bytes / 1024.0 / 1024.0 / 1024.0) + " GB";
 }
 
-String getContentType(String filename) { // need to remove if not using
+String getContentType(String filename) {  // need to remove if not using
   if (filename.endsWith(".htm"))
     return "text/html";
   else if (filename.endsWith(".html"))
@@ -529,7 +526,7 @@ void alert(const char *message) {
 }
 
 // Function to append a message to a log file
-void log(const char *message, bool serial){
+void log(const char *message, bool serial) {
   if (serial)
     Serial.println(message);
   char path[64];
@@ -538,14 +535,14 @@ void log(const char *message, bool serial){
   Serial.printf("Appending to log file: %s\n", path);
 
   File file = SD.open(path, FILE_APPEND);
-  if (!file){
+  if (!file) {
     Serial.println("Failed to open log file for appending");
     return;
   }
 
   char timestamp[32];
   struct tm timeinfo;
-  if (getLocalTime(&timeinfo)){
+  if (getLocalTime(&timeinfo)) {
     snprintf(timestamp, sizeof(timestamp), "%04d-%02d-%02d %02d:%02d:%02d ", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     file.print(timestamp);
   }
@@ -558,7 +555,7 @@ void log(const char *message, bool serial){
   file.close();
 }
 
-int year() { // Helper functions to get the current year
+int year() {  // Helper functions to get the current year
   struct tm timeinfo;
   if (getLocalTime(&timeinfo)) {
     return timeinfo.tm_year + 1900;
@@ -566,7 +563,7 @@ int year() { // Helper functions to get the current year
   return 1970;  // Default year if time is not available
 }
 
-int month() { // Helper functions to get the current month
+int month() {  // Helper functions to get the current month
   struct tm timeinfo;
   if (getLocalTime(&timeinfo)) {
     return timeinfo.tm_mon + 1;
@@ -574,7 +571,7 @@ int month() { // Helper functions to get the current month
   return 1;  // Default month if time is not available
 }
 
-void createDirectories(const char *path) { // Function to create directories if they do not exist
+void createDirectories(const char *path) {  // Function to create directories if they do not exist
   char temp[64];
   char *pos = temp;
   snprintf(temp, sizeof(temp), "%s", path);
@@ -647,24 +644,24 @@ void loadUserData(int index) {
   userdata.end();
 }
 
-bool setupWiFi(const char* newSSID, const char* newPassword) {
+bool setupWiFi(const char *newSSID, const char *newPassword) {
   bool connected = false;
   int attempts;
-  
-  if (WiFi.getMode() == WIFI_AP) { // Switch from AP mode to STA mode if necessary
+
+  if (WiFi.getMode() == WIFI_AP) {  // Switch from AP mode to STA mode if necessary
     Serial.println("Currently in AP mode. Switching to STA mode...");
     WiFi.softAPdisconnect(true);
     delay(3000);
   }
 
-  auto attemptConnection = [](const char* ssid, const char* password) { // Function to attempt connection to a given Wi-Fi network
+  auto attemptConnection = [](const char *ssid, const char *password) {  // Function to attempt connection to a given Wi-Fi network
     WiFi.begin(ssid, password);
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 20) {
       delay(500);
       attempts++;
     }
-    if(WiFi.status() == WL_CONNECTED){
+    if (WiFi.status() == WL_CONNECTED) {
       WiFi.setHostname(host);
       esp32Info.ssid = ssid;
       esp32Info.wifi_password = password;
@@ -676,18 +673,17 @@ bool setupWiFi(const char* newSSID, const char* newPassword) {
       setTimezone();
       configTime(esp32Info.gmtoffset, esp32Info.daylightoffset, "pool.ntp.org");
       return true;
-    }
-    else return false;
+    } else return false;
   };
 
-  if (WiFi.status() == WL_CONNECTED) { // If already connected, disconnect and try new network
+  if (WiFi.status() == WL_CONNECTED) {  // If already connected, disconnect and try new network
     log("Currently connected to Wi-Fi. Disconnecting...");
     WiFi.disconnect();
     delay(3000);
     if (attemptConnection(newSSID, newPassword)) {
       log("Connected to new Wi-Fi network.");
       return true;
-    } else { // Retrieve previous network credentials
+    } else {  // Retrieve previous network credentials
       log("Failed to connect to new Wi-Fi network. Trying to reconnect to previous network...");
       String oldSSID = WiFi.SSID();
       String oldPassword = WiFi.psk();
@@ -698,7 +694,7 @@ bool setupWiFi(const char* newSSID, const char* newPassword) {
         log("Failed to reconnect to previous Wi-Fi network.");
       }
     }
-  } else { // No current connection, attempt to connect to new Wi-Fi network
+  } else {  // No current connection, attempt to connect to new Wi-Fi network
     if (attemptConnection(newSSID, newPassword)) {
       log("Connected to new Wi-Fi network.");
       return true;
@@ -707,7 +703,7 @@ bool setupWiFi(const char* newSSID, const char* newPassword) {
     }
   }
 
-  if(WiFi.softAP(AP_ssid, AP_password)){ // Setup Access Point if connection attempts failed
+  if (WiFi.softAP(AP_ssid, AP_password)) {  // Setup Access Point if connection attempts failed
     WiFi.softAPsetHostname(host);
     esp32Info.IP = WiFi.softAPIP();
     esp32Info.MAC_Address = getInterfaceMacAddress(ESP_MAC_WIFI_SOFTAP);
@@ -720,8 +716,6 @@ bool setupWiFi(const char* newSSID, const char* newPassword) {
 
 String getUptime() {
   unsigned long millisec = millis();
-  esp32Info.uptime = millisec;
-
   // Calculate days, hours, minutes, and seconds
   unsigned long seconds = millisec / 1000;
   unsigned long minutes = seconds / 60;
@@ -734,6 +728,6 @@ String getUptime() {
   hours = hours % 24;
 
   char uptimeStr[50];
-  snprintf(uptimeStr, sizeof(uptimeStr), "%lu days, %lu hours, %lu minutes, %lu seconds", days, hours, minutes, seconds);
-  return String(uptimeStr);
+  snprintf(uptimeStr, sizeof(uptimeStr), "%lud %luh %lum %lus", days, hours, minutes, seconds);
+  return esp32Info.uptime = String(uptimeStr);
 }

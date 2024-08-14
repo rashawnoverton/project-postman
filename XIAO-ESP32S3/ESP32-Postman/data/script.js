@@ -109,7 +109,7 @@ function showSection(id) {
       window.open('/update', '_blank');
     }
 
-    if (id == 'serial' && isActive){
+    if (id == 'serial-messages' && isActive){
       window.open('/webserial', '_blank');
     }
   });
@@ -134,59 +134,67 @@ document.addEventListener("DOMContentLoaded", () => {
   const streamBtn = document.getElementById('stream-btn');
   let streamInterval = null;
 
-  // Click event for stream button
-  streamBtn.addEventListener('click', () => {
-    if (streaming) {
-      // Stop streaming
-      streamBtn.textContent = 'Start Stream';
-      streaming = false;
-      fetch('/stopStream');  // Send request to stop streaming
+  if (streamBtn) {
+    // Click event for stream button
+    streamBtn.addEventListener('click', () => {
+      if (streaming) {
+        // Stop streaming
+        streamBtn.textContent = 'Start Stream';
+        streaming = false;
+        fetch('/stopStream');  // Send request to stop streaming
 
-      // Clear interval to stop fetching frames
-      clearInterval(streamInterval);
-      streamInterval = null;
+        // Clear interval to stop fetching frames
+        clearInterval(streamInterval);
+        streamInterval = null;
 
-      // The last image remains displayed
-    } else {
-      // Start streaming
-      streamBtn.textContent = 'Stop Stream';
-      streaming = true;
-      fetch('/startStream');  // Send request to start streaming
+        // The last image remains displayed
+      } else {
+        // Start streaming
+        streamBtn.textContent = 'Stop Stream';
+        streaming = true;
+        fetch('/startStream');  // Send request to start streaming
 
-      // Set interval to fetch new frames
-      streamInterval = setInterval(() => {
-        if (streaming) {
-          fetch('/stream')
-            .then(response => response.text())
-            .then(text => {
-              if (text.length > 0) {
-                streamImg.src = 'data:image/jpeg;base64,' + text;
-              } else {
-                console.log('No image received.');
-              }
-            })
-            .catch(error => console.error('Error fetching stream:', error));
-        }
-      }, 50); // Fetch new frames every 50 milliseconds
-    }
-  });
+        // Set interval to fetch new frames
+        streamInterval = setInterval(() => {
+          if (streaming) {
+            fetch('/stream')
+              .then(response => response.text())
+              .then(text => {
+                if (text.length > 0) {
+                  streamImg.src = 'data:image/jpeg;base64,' + text;
+                } else {
+                  console.log('No image received.');
+                }
+              })
+              .catch(error => console.error('Error fetching stream:', error));
+          }
+        }, 50); // Fetch new frames every 50 milliseconds
+      }
+    });
+  } else {
+    console.error('Stream button not found.');
+  }
 
   // Handle Lock/Unlock Button
   const lockBtn = document.getElementById('lock-btn');
   let locked = false;
 
-  lockBtn.addEventListener('click', () => {
-    if (locked) {
-      // Unlock the system
-      fetch('/lock');
-      lockBtn.textContent = 'Unlock';
-    } else {
-      // Lock the system
-      fetch('/unlock');
-      lockBtn.textContent = 'Lock';
-    }
-    locked = !locked;
-  });
+  if (lockBtn) {
+    lockBtn.addEventListener('click', () => {
+      if (locked) {
+        // Unlock the system
+        fetch('/lock');
+        lockBtn.textContent = 'Unlock';
+      } else {
+        // Lock the system
+        fetch('/unlock');
+        lockBtn.textContent = 'Lock';
+      }
+      locked = !locked;
+    });
+  } else {
+    console.error('Lock button not found.');
+  }
 
   // Fetch and display alerts
   const alertsBox = document.getElementById('alerts-box');
@@ -237,12 +245,15 @@ document.addEventListener("DOMContentLoaded", () => {
   loadLogs();
 
   // Refresh logs every minute
-  // setInterval(loadlogs, 60000); // Refresh every 60,000 ms (1 minute)
+  // setInterval(loadLogs, 60000); // Refresh every 60,000 ms (1 minute)
 
-  // Fetch and display device information
   function fetchDeviceInfo() {
     fetch('/device-info')
-      .then(response => response.json())
+      .then(response => response.text()) // Fetch as text first
+      .then(text => {
+        console.log('Raw JSON response:', text); // Log the raw JSON response
+        return JSON.parse(text); // Parse the JSON
+      })
       .then(data => {
         document.getElementById('device-info').innerHTML = `
           <h3>Device Information</h3>
@@ -271,16 +282,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initial load of device info
   fetchDeviceInfo();
-
   // Refresh device info every minute (optional)
   // setInterval(fetchDeviceInfo, 60000); // Refresh every 60,000 ms (1 minute)
 
   // Initialize network scan and form submission
   scanNetworks();
 
-  
   // Set up event listeners for network connection
-  document.getElementById('network-list').addEventListener('change', handleSelectionChange);
-  document.getElementById('manual-ssid').addEventListener('input', handleSelectionChange);
-  document.getElementById('connect-btn').addEventListener('click', connectToNetwork);
+  const networkList = document.getElementById('network-list');
+  const manualSSID = document.getElementById('manual-ssid');
+  const connectBtn = document.getElementById('connect-btn');
+
+  if (networkList) {
+    networkList.addEventListener('change', handleSelectionChange);
+  } else {
+    console.error('Network list not found.');
+  }
+
+  if (manualSSID) {
+    manualSSID.addEventListener('input', handleSelectionChange);
+  } else {
+    console.error('Manual SSID input not found.');
+  }
+
+  if (connectBtn) {
+    connectBtn.addEventListener('click', connectToNetwork);
+  } else {
+    console.error('Connect button not found.');
+  }
 });
