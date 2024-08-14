@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Postman</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <!-- Side navigation -->
+  <div class="sidenav">
+    <a href="#main">Main</a>
+    <a href="#recordings">Recordings</a>
+    <a href="#packages">Packages</a>
+    <button class="dropdown-btn">Settings
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-container">
+      <a href="#logs" class="sub-settings">Logs</a>
+      <a href="#manage-users" class="sub-settings">Manage Users</a>
+      <a href="#wifi" class="sub-settings">Device Information</a>
+      <a href="#serial-messages" class="sub-settings">Software Serial Messages</a>
+      <a href="#report-problem" class="sub-settings">Report a Problem</a>
+      <a href="#update-firmware" class="sub-settings">Update Firmware</a>
+    </div>
+    <div class="auth-box">
+      <a href="#login" id="login-btn">Login</a>
+      <div id="logout-box">
+        <a href="#logout" id="logout-btn">Logout</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Main section -->
+    <div id="main" class="content-section">
+      <h2>Live Stream</h2>
+      <div class="stream-container">
+        <div class="stream-placeholder">
+          <img id="stream" src="" alt="Live Stream" />
+        </div>
+        <div class="stream-controls">
+          <button id="stream-btn">Start Stream</button>
+          <button id="lock-btn">Unlock</button>
+        </div>
+      </div>
+      <div class="alerts">
+        <h3>Alerts</h3>
+        <div class="alerts-box" id="alerts-box">
+          <!-- Alert messages will appear here -->
+          <p>No alerts to show.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recordings section -->
+    <div id="recordings" class="content-section">
+      <h2>Recordings</h2>
+      <div id="recordings-list" class="recordings-list">
+        <!-- Recording files will be listed here -->
+      </div>
+      <div id="recordings-image" class="recordings-image">
+        <!-- Placeholder for the 30-second image stream -->
+      </div>
+    </div>
+
+    <!-- Packages section -->
+    <div id="packages" class="content-section">
+      <h2>Packages</h2>
+      <div class="feature-placeholder">
+        <p>Feature Coming Soon</p>
+      </div>
+    </div>
+
+    <!-- Logs section -->
+    <div id="logs" class="content-section">
+      <h2>Logs</h2>
+      <div id="logs-list" class="recordings-list">
+        <!-- Recording files will be listed here -->
+      </div>
+    </div>
+
+    <!-- Manage Users section -->
+    <div id="manage-users" class="content-section">
+      <h2>Manage Users</h2>
+      <!-- Edit current user info -->
+      <div id="currentUserEdit" class="user-info">
+        <label for="currentUserName">Name:</label>
+        <input type="text" id="currentUserName" placeholder="John Doe">
+
+        <label for="currentUserPermission">Permission:</label>
+        <input type="text" id="currentUserPermission" placeholder="Admin">
+
+        <label for="currentUserPhone">Phone Number:</label>
+        <input type="text" id="currentUserPhone" placeholder="123-456-7890">
+
+        <label for="currentUserEmail">Email:</label>
+        <input type="email" id="currentUserEmail" placeholder="john.doe@example.com">
+
+        <label for="currentUserPin">Pin Code:</label>
+        <input type="text" id="currentUserPin" placeholder="****">
+
+        <button id="saveCurrentUserBtn">Save Changes</button>
+        <div class="usersTable">
+          <!-- Table for displaying users -->
+          <table id="userTable">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Phone Number</th>
+                <th>Email</th>
+                <th>Password</th>
+                <th>Pin Code</th>
+                <th>Permission</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="user0">
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr id="user1">
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr id="user2">
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr id="user3">
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr id="user4">
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr id="user5">
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- WiFi Connection section -->
+    <div id="wifi" class="content-section">
+      <h2>Device Information</h2>
+      <div class="wifi-device-container">
+        <!-- WiFi Connection details -->
+        <div id="wifi-connection">
+          <h3>WiFi Status</h3>
+          <div id="wifi-status">
+            <p>Current Status: <span id="current-status">Disconnected</span></p>
+            <p>Connected to: <span id="current-network">None</span></p>
+            <p>Signal Strength: <span id="signal-strength">-</span> dBm</p>
+            <p>IP Address: <span id="ip-address">0.0.0.0</span></p>
+            <p>Hostname: <span id="hostname">N/A</span></p>
+          </div>
+          <!-- Connect to a selected network -->
+          <div id="wifi-connect">
+            <h3>Connect to a Network</h3>
+            <form onsubmit="connectToNetwork(); return false;">
+              <label for="network-list">SSID:</label>
+              <select id="network-list" onchange="handleSelectionChange()">
+                <option value="">Select an SSID</option>
+                <!-- Network options will be populated here -->
+              </select>
+              <input type="text" id="manual-ssid" placeholder="Or type SSID here">
+              <br>
+              <label for="password">Password:</label>
+              <input type="password" id="password" name="password">
+              <br>
+              <input type="submit" value="Connect">
+            </form>
+            <!-- Scan for available networks -->
+            <div id="wifi-scan">
+              <button onclick="scanNetworks()">Scan for Networks</button>
+            </div>
+          </div>
+          <!-- Device Information details -->
+          <div id="device-info">
+            <h3>Device Information</h3>
+            <p>Device Model: <span id="device-model">ESP32</span></p>
+            <p>MAC Address: <span id="mac-address">00:00:00:00:00:00</span></p>
+            <p>Firmware Version: <span id="firmware-version">1.0.0</span></p>
+            <p>Uptime: <span id="uptime">0 days 0 hours 0 minutes</span></p>
+            <button onclick="rebootESP()">Reboot ESP32S3</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="serial-messages" class="content-section">
+      <h2>Software Serial Messages</h2>
+      <div class="serial-terminal">
+        <div id="serial-output" class="serial-output">  Received messages will appear here 
+        </div>
+        <div id="serial-input" class="serial-input">
+          <textarea id="messageInput" placeholder="Type your message here..."></textarea>
+          <button id="sendMessageBtn">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report a Problem section -->
+    <div id="report-problem" class="content-section">
+      <h2>Report a Problem</h2>
+      <div class="contact-info">
+        <p>If you encounter any issues or have questions, please reach out using the following contact information:</p>
+        <ul>
+          <li><strong>GitHub:</strong> <a href="https://github.com/rashawnoverton"
+              target="_blank">github.com/rashawnoverton</a></li>
+          <li><strong>Website:</strong> <a href="https://rashawnio.wordpress.com/"
+              target="_blank">rashawnio.wordpress.com/</a></li>
+          <li><strong>Hackster.io:</strong> <a href="https://www.hackster.io/rashawnisaiah"
+              target="_blank">hackster.io/rashawnisaiah</a></li>
+          <li><strong>Email:</strong> <a href="mailto:rashawnoverton@live.com">rashawnoverton@live.com</a></li>
+        </ul>
+      </div>
+    </div>
+
+
+    <!-- Update Firmware section -->
+    <div id="update-firmware" class="content-section">
+      <h2>Update Firmware</h2>
+      <div class="feature-placeholder">
+        <p>Feature Coming Soon</p>
+      </div>
+    </div>
+
+    <!-- Login page -->
+    <div id="login" class="content-section">
+      <h2>Login</h2>
+      <div class="login-form">
+        <form>
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required>
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required>
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Logout page -->
+    <div id="logout" class="content-section">
+      <h2>Logout</h2>
+      <div class="logout-message">
+        <p>You have been logged out.</p>
+        <a href="#login" id="login-link">Login Again</a>
+      </div>
+    </div>
+  </div>
+  <script src="/script.js"></script>
+</body>
+</html>
